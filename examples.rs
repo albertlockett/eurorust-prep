@@ -123,3 +123,22 @@ impl Exporter<OtapPdata> for ParquetExporter {
  
     }
 }
+
+
+// example of using arrow-rs SDKs
+fn main() {
+    use arrow::array::{RecordBatch, StringArray, Int32Array};
+    use arrow::compute::kernels::cmp::eq;
+    use arrow::compute::or;
+
+    let event_name = StringArray::from_iter_values(["login.success", 
+        "request.failed", "file.read_error"]);
+    let severity_number = Int32Array::from_iter_values([INFO, WARN, ERROR]);
+
+    let is_important = or(
+        &eq(&area_codes, &UInt16Array::new_scalar(WARN)).unwrap(),
+        &eq(&area_codes, &UInt16Array::new_scalar(ERROR)).unwrap(),
+    );
+    println!("{is_important:?}"); // [false, true, true]
+}
+
