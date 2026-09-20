@@ -27,7 +27,54 @@ struct ChannelState<T> {
     // ...
 }
 
+//! otap-dataflow/crates/pdata-views/src/logs.rs
 
+/// View for LogRecords
+pub trait LogRecordView {
+    /// The `AttributeView` type associated with this impl of the 
+    /// `LogRecordView` trait for accessing this LogRecord's attributes
+    type Attribute<'att>: AttributeView
+    where
+        Self: 'att;
+
+    /// The associated attribute iterator type for this impl of the 
+    /// trait. The iterator will yield borrowed references that must
+    /// live as long as the lifetime 'att
+    type AttributeIter<'att>: Iterator<Item = Self::Attribute<'att>>
+    where
+        Self: 'att;
+
+    /// The associated `AnyValueView` type associated with this impl
+    /// of `LogRecordView` trait for accessing this LogRecord's Body
+    type Body<'bod>: AnyValueView<'bod>
+    where
+        Self: 'bod;
+
+    /// access  the time when the event occurred.
+    /// returns `None` if the timestamp is unknown or missing
+    fn time_unix_nano(&self) -> Option<u64>;
+
+    /// access the time when the event was observed by the collection 
+    /// system. returns `None` if the timestamp is unknown or missing
+    fn observed_time_unix_nano(&self) -> Option<u64>;
+
+    // ...
+}
+
+
+/// Implementation of `LogRecordView` backed by protobuf serialized 
+/// `LogRecord` message
+pub struct RawLogRecord<'a> {
+    // contains buf: &[u8] and internal shared parsing state
+    bytes_parser: ProtoBytesParser<'a, LogFieldOffsets>,
+}
+
+impl LogRecordView for RawLogRecord<'_> {
+    // ...
+    type AttributeIter<'att> = KeyValueIter<'att, LogFieldOffsets>
+    where
+        Self: 'att;
+}
 
 
 
