@@ -29,37 +29,41 @@ struct ChannelState<T> {
 
 //! otap-dataflow/crates/pdata-views/src/logs.rs
 
-/// View for LogRecords
+/// View trait for LogRecords ...
 pub trait LogRecordView {
-    /// The `AttributeView` type associated with this impl of the 
-    /// `LogRecordView` trait for accessing this LogRecord's attributes
-    type Attribute<'att>: AttributeView
-    where
-        Self: 'att;
+    // access key-value attributes ...
+    type Attribute<'att>: AttributeView where Self: 'att;
 
-    /// The associated attribute iterator type for this impl of the 
-    /// trait. The iterator will yield borrowed references that must
-    /// live as long as the lifetime 'att
-    type AttributeIter<'att>: Iterator<Item = Self::Attribute<'att>>
-    where
-        Self: 'att;
+    type AttributeIter<'att>: Iterator<Item = Self::Attribute<'att>> 
+        where Self: 'att;
+    
+    fn attributes(&self) -> Self::AttributeIter<'_>;
 
-    /// The associated `AnyValueView` type associated with this impl
-    /// of `LogRecordView` trait for accessing this LogRecord's Body
-    type Body<'bod>: AnyValueView<'bod>
-    where
-        Self: 'bod;
+    // log body: ...
+    type Body<'bod>: AnyValueView<'bod> where Self: 'bod;
 
-    /// access  the time when the event occurred.
-    /// returns `None` if the timestamp is unknown or missing
+    fn body(&self) -> Option<Self::Body<'_>>;
+
+    // other fields ...
     fn time_unix_nano(&self) -> Option<u64>;
-
-    /// access the time when the event was observed by the collection 
-    /// system. returns `None` if the timestamp is unknown or missing
-    fn observed_time_unix_nano(&self) -> Option<u64>;
+    fn severity_number(&self) -> Option<i32>;
 
     // ...
 }
+
+// Proto backed implementation ...
+pub struct RawLogRecord<'a> { /* ... */ }
+
+impl LogRecordView for RawLogRecord<'_> {
+    type Attribute<'att> = RawKeyValue<'att> where Self: 'att;
+    // ...
+}
+pub struct RawKeyValue<'a> { buf: &'a [u8], pos: Cell<usize>, /* .. */ }
+
+impl AttributeView for RawKeyValue<'_> { /* ... */ }
+
+
+
 
 
 /// Implementation of `LogRecordView` backed by protobuf serialized 
@@ -127,7 +131,7 @@ impl Exporter<OtapPdata> for ParquetExporter {
 
 // example of using arrow-rs SDKs
 fn main() {
-    use arrow::array::{RecordBatch, StringArray, Int32Array};
+    use arrow::array::{Int32Array, StringArray};
     use arrow::compute::kernels::cmp::eq;
     use arrow::compute::or;
 
@@ -136,8 +140,8 @@ fn main() {
     let severity_number = Int32Array::from_iter_values([INFO, WARN, ERROR]);
 
     let is_important = or(
-        &eq(&area_codes, &UInt16Array::new_scalar(WARN)).unwrap(),
-        &eq(&area_codes, &UInt16Array::new_scalar(ERROR)).unwrap(),
+        &eq(&severity_number, &UInt16Array::new_scalar(WARN)).unwrap(),
+        &eq(&severity_number, &UInt16Array::new_scalar(ERROR)).unwrap(),
     );
     println!("{is_important:?}"); // [false, true, true]
 }
