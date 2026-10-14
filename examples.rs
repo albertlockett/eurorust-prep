@@ -29,36 +29,29 @@ struct ChannelState<T> {
 
 //! otap-dataflow/crates/pdata-views/src/logs.rs
 
-/// View trait for LogRecords ...
+/// View trait for LogRecords:
 pub trait LogRecordView {
-    // access key-value attributes ...
-    type Attribute<'att>: AttributeView where Self: 'att;
-
+    // access key-value attributes:
+    type Attribute<'att>: AttributeView where Self: 'att>
     type AttributeIter<'att>: Iterator<Item = Self::Attribute<'att>> 
-        where Self: 'att;
-    
+        where Self: 'att;  
     fn attributes(&self) -> Self::AttributeIter<'_>;
 
-    // log body: ...
-    type Body<'bod>: AnyValueView<'bod> where Self: 'bod;
-
-    fn body(&self) -> Option<Self::Body<'_>>;
-
-    // other fields ...
+    // other primitive fields:
     fn time_unix_nano(&self) -> Option<u64>;
     fn severity_number(&self) -> Option<i32>;
 
     // ...
 }
 
-// Proto backed implementation ...
-pub struct RawLogRecord<'a> { /* ... */ }
+// Proto backed implementation
+pub struct RawLogRecord<'a> { buf: &'a [u8] },
 
 impl LogRecordView for RawLogRecord<'_> {
     type Attribute<'att> = RawKeyValue<'att> where Self: 'att;
     // ...
 }
-pub struct RawKeyValue<'a> { buf: &'a [u8], pos: Cell<usize>, /* .. */ }
+pub struct RawKeyValue<'a> { buf: &'a [u8] }
 
 impl AttributeView for RawKeyValue<'_> { /* ... */ }
 
@@ -90,9 +83,9 @@ impl Receiver<OtapPdata> for KafkaReceiver {
         mut self: Box<Self>,
         ctrl_msg_recv: ControlChannel<OtapPdata>,
         effect_handler: EffectHandler<OtapPdata>,
+
     ) -> Result<TerminalState, EngineError> {
         // ...
- 
     }
 }
 
@@ -105,12 +98,7 @@ impl Processor<OtapPdata> for TransformProcessor {
         message: Message<OtapPdata>,
         effect_handler: &mut EffectHandler<OtapPdata>,
     ) -> Result<(), EngineError> {
-        match message {
-            Message::Control(control_msg) => { /* ... */ },
-            Message::Pdata(pdata) => { /* ... */}
-        }
-
-        ///
+        // ..
     }
 }
 
@@ -123,8 +111,7 @@ impl Exporter<OtapPdata> for ParquetExporter {
         mut msg_chan: ExporterInbox<OtapPdata>,
         effect_handler: EffectHandler<OtapPdata>,
     ) -> Result<TerminalState, Error> {
- 
- 
+        // ...
     }
 }
 
