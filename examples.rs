@@ -118,18 +118,26 @@ impl Exporter<OtapPdata> for ParquetExporter {
 
 // example of using arrow-rs SDKs
 fn main() {
-    use arrow::array::{Int32Array, StringArray};
+    use arrow::array::{Array, Int32Array, RecordBatch, StringArray};
     use arrow::compute::kernels::cmp::eq;
     use arrow::compute::or;
 
-    let event_name = StringArray::from_iter_values(["login.success", 
-        "request.failed", "file.read_error"]);
+    // Arrow "Arrays" are columns of some data type
+    let event_name =
+        StringArray::from_iter_values(["login.success", "request.failed", "file.read_error"]);
     let severity_number = Int32Array::from_iter_values([INFO, WARN, ERROR]);
 
-    let is_important = or(
-        &eq(&severity_number, &UInt16Array::new_scalar(WARN)).unwrap(),
-        &eq(&severity_number, &UInt16Array::new_scalar(ERROR)).unwrap(),
-    );
+    // RecordBatch = collection columns with schema
+    let batch = RecordBatch::try_from_iter([
+        ("event_name", make_array(event_name.to_data())),
+        ("severity_text", make_array(severity_number.to_data())),
+    ])?;
+
+    // compute kernels for transforming arrow data & batches
+    let is_important: BooleanArray = or(
+        &eq(&severity_number, &Int32Array::new_scalar(WARN)).unwrap(),
+        &eq(&severity_number, &Int32Array::new_scalar(ERROR)).unwrap(),
+    )?;
     println!("{is_important:?}"); // [false, true, true]
 }
 
