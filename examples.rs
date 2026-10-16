@@ -118,13 +118,16 @@ impl Exporter<OtapPdata> for ParquetExporter {
 
 // example of using arrow-rs SDKs
 fn main() {
-    use arrow::array::{Array, Int32Array, RecordBatch, StringArray};
+    use arrow::array::*;
     use arrow::compute::kernels::cmp::eq;
     use arrow::compute::or;
 
     // Arrow "Arrays" are columns of some data type
-    let event_name =
-        StringArray::from_iter_values(["login.success", "request.failed", "file.read_error"]);
+    let event_name = StringArray::from_iter_values([
+        "login.success", 
+        "request.failed", 
+        "file.read_error",
+    ]);
     let severity_number = Int32Array::from_iter_values([INFO, WARN, ERROR]);
 
     // RecordBatch = collection columns with schema
